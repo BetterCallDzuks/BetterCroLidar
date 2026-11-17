@@ -1,7 +1,8 @@
-"""Native desktop launcher for BetterCroLidar."""
+"""Native desktop launcher for BetterCroLidar (Linux & Windows)."""
 
 from __future__ import annotations
 
+import os
 import shutil
 import socket
 import subprocess
@@ -10,6 +11,7 @@ import tempfile
 import threading
 import time
 import urllib.request
+import webbrowser
 from pathlib import Path
 
 import uvicorn
@@ -33,6 +35,31 @@ def _wait_ready(url: str, timeout: float = 10.0) -> bool:
         except Exception:
             time.sleep(0.15)
     return False
+
+
+def _find_app_browser() -> str | None:
+    if sys.platform == "win32":
+        candidates = [
+            shutil.which("msedge"),
+            shutil.which("chrome"),
+            shutil.which("brave"),
+            r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+            r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe",
+            os.path.expandvars(r"%LOCALAPPDATA%\BraveSoftware\Brave-Browser\Application\brave.exe"),
+        ]
+        for c in candidates:
+            if c and Path(c).exists():
+                return str(c)
+        return None
+
+    return (
+        shutil.which("brave-browser")
+        or shutil.which("google-chrome")
+        or shutil.which("chromium")
+        or shutil.which("chromium-browser")
+    )
 
 
 def main() -> int:
@@ -61,12 +88,7 @@ def main() -> int:
     except ImportError:
         pass
 
-    browser = (
-        shutil.which("brave-browser")
-        or shutil.which("google-chrome")
-        or shutil.which("chromium")
-        or shutil.which("chromium-browser")
-    )
+    browser = _find_app_browser()
     if browser:
         profile_dir = tempfile.mkdtemp(prefix="better_cro_lidar_")
         proc = subprocess.Popen(
@@ -85,7 +107,7 @@ def main() -> int:
         return 0
 
     # Fallback: open default browser and keep server running
-    subprocess.Popen(["xdg-open", url])
+    webbrowser.open(url)
     try:
         while t.is_alive():
             time.sleep(0.5)

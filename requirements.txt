@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+numpy
+scipy
+matplotlib
+pillow
+rasterio
+pyproj
