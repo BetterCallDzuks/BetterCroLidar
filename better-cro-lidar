@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+APP_DIR="/home/antonio/BetterCroLidar"
+cd "$APP_DIR"
+export PYTHONPATH="$APP_DIR"
+exec "$APP_DIR/.venv/bin/python" -m better_cro_lidar.desktop "$@"

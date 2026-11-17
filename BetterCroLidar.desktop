@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=BetterCroLidar
+Comment=Croatia-wide LiDAR & Terrain Studio
+Exec=/home/antonio/BetterCroLidar/better-cro-lidar
+Path=/home/antonio/BetterCroLidar
+Icon=/home/antonio/BetterCroLidar/icon.png
+Terminal=false
+Categories=Science;Geography;Education;
+StartupWMClass=BetterCroLidar

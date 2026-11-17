@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+*.pyc
+DMT Croatia 20m
+better_cro_lidar_notes.json

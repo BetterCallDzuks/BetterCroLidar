@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BetterCroLidar — Croatia LiDAR & Terrain Studio</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Left Control Sidebar -->
+  <aside id="left-sidebar" class="sidebar left-sb">
+    <div class="sb-header">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <div>
+          <div class="brand-title">BetterCroLidar</div>
+          <div class="brand-sub">Croatia Terrain &amp; LiDAR Engine</div>
+        </div>
+      </div>
+      <button id="left-toggle" class="collapse-btn" title="Collapse sidebar">«</button>
+    </div>
+
+    <div class="quick-bar">
+      <button class="qbtn" id="btn-zoom-in" title="Zoom In">+</button>
+      <button class="qbtn" id="btn-zoom-out" title="Zoom Out">−</button>
+      <button class="qbtn" id="btn-fit-region" title="Fit Selected Region">⛶</button>
+      <button class="qbtn" id="btn-measure" title="Measure Distance">📏</button>
+      <button class="qbtn" id="btn-clear-overlays" title="Clear All Overlays">🧹</button>
+    </div>
+
+    <div class="region-bar">
+      <label for="region-select">Region</label>
+      <select id="region-select"></select>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tbtn active" data-tab="view">View</button>
+      <button class="tbtn" data-tab="layers">Layers</button>
+      <button class="tbtn" data-tab="filter">Filter</button>
+      <button class="tbtn" data-tab="profile">Profile</button>
+      <button class="tbtn" data-tab="export">Export</button>
+    </div>
+
+    <div class="sb-body">
+      <!-- VIEW TAB -->
+      <section class="tab-pane active" id="pane-view">
+        <div class="sec-title">Basemap</div>
+        <div id="basemap-list" class="radio-list"></div>
+
+        <div class="sec-title" style="margin-top:12px;">Image Viewing &amp; Filters</div>
+        <div class="preset-row">
+          <button class="pbtn" data-preset="default">Default</button>
+          <button class="pbtn" data-preset="night">Night Scan</button>
+          <button class="pbtn" data-preset="contrast">Hi-Contrast</button>
+          <button class="pbtn" data-preset="edge">Thermal</button>
+        </div>
+        <div class="slider-row"><span>Brightness <b id="v-bright">100%</b></span><input id="f-bright" type="range" min="40" max="200" value="100" /></div>
+        <div class="slider-row"><span>Contrast <b id="v-contrast">100%</b></span><input id="f-contrast" type="range" min="50" max="250" value="100" /></div>
+        <div class="slider-row"><span>Saturation <b id="v-sat">100%</b></span><input id="f-sat" type="range" min="0" max="250" value="100" /></div>
+        <div class="slider-row"><span>Hue Rotate <b id="v-hue">0°</b></span><input id="f-hue" type="range" min="0" max="360" value="0" /></div>
+        <div class="check-row">
+          <label><input id="f-invert" type="checkbox" /> Invert</label>
+          <label><input id="f-gray" type="checkbox" /> Grayscale</label>
+        </div>
+      </section>
+
+      <!-- LAYERS TAB -->
+      <section class="tab-pane" id="pane-layers">
+        <div class="sec-title">Live Terrain &amp; LiDAR Analytics (DMT 20m)</div>
+        <div id="analytics-modes" class="mode-grid"></div>
+        <button id="btn-render-view" class="primary-btn">Render Current Viewport (Hi-Res)</button>
+
+        <div class="sec-title" style="margin-top:12px;">Croatian WMS &amp; Relief Overlays</div>
+        <div id="wms-list" class="check-list"></div>
+
+        <div class="sec-title" style="margin-top:12px;">Vector &amp; Sensor Layers</div>
+        <div id="vector-list" class="check-list"></div>
+      </section>
+
+      <!-- FILTER TAB -->
+      <section class="tab-pane" id="pane-filter">
+        <div class="sec-title">Overlay Styling</div>
+        <div class="field-row">
+          <label>Colormap</label>
+          <select id="cmap-select"></select>
+        </div>
+        <div class="slider-row"><span>Overlay Opacity <b id="v-opacity">65%</b></span><input id="f-opacity" type="range" min="10" max="100" value="65" /></div>
+
+        <div class="sec-title" style="margin-top:12px;">Material Signature Scan</div>
+        <div class="field-row">
+          <label>Target Material</label>
+          <select id="mat-select"></select>
+        </div>
+        <div class="slider-row"><span>Tolerance (±) <b id="v-tol">0.50</b></span><input id="f-tol" type="range" min="0.1" max="3.0" step="0.1" value="0.5" /></div>
+        <button id="btn-scan-material" class="primary-btn">Scan Viewport for Material</button>
+        <div id="mat-status" class="muted-note"></div>
+      </section>
+
+      <!-- PROFILE TAB -->
+      <section class="tab-pane" id="pane-profile">
+        <div class="sec-title">Cross-Section Profile (Anywhere in Croatia)</div>
+        <p class="muted-note">Click <b>Start Profile</b>, then click two points on the map to plot elevation &amp; density.</p>
+        <div class="preset-row">
+          <button id="btn-start-profile" class="primary-btn" style="flex:1;">Start Profile</button>
+          <button id="btn-clear-profile" class="pbtn">Clear</button>
+        </div>
+        <div id="profile-stats" class="muted-note" style="margin-top:8px;"></div>
+        <canvas id="profile-canvas" width="276" height="170"></canvas>
+      </section>
+
+      <!-- EXPORT TAB -->
+      <section class="tab-pane" id="pane-export">
+        <div class="sec-title">Load Local Field Data</div>
+        <input id="file-upload" type="file" accept=".csv,.geojson,.json" style="width:100%;font-size:11px;margin-bottom:8px;" />
+        <div class="sec-title" style="margin-top:10px;">Export Workspace</div>
+        <button id="btn-export-geojson" class="pbtn" style="width:100%;margin-bottom:6px;">Export Pinned / Notes GeoJSON</button>
+        <button id="btn-clear-pins" class="pbtn" style="width:100%;">Clear Custom Pins</button>
+      </section>
+    </div>
+  </aside>
+
+  <!-- Right Notes Sidebar -->
+  <aside id="right-sidebar" class="sidebar right-sb">
+    <div class="sb-header">
+      <button id="right-toggle" class="collapse-btn" title="Collapse sidebar">»</button>
+      <div class="brand" style="justify-content:flex-end;">
+        <div style="text-align:right;">
+          <div class="brand-title">Tasks &amp; Notes</div>
+          <div class="brand-sub">Croatia Field Log</div>
+        </div>
+      </div>
+    </div>
+    <div class="sb-body">
+      <div class="task-input-row">
+        <input id="task-input" type="text" placeholder="Add target or survey task..." />
+        <button id="btn-add-task" class="qbtn">+</button>
+      </div>
+      <ul id="task-list" class="task-list"></ul>
+      <div class="sec-title" style="margin-top:10px;">Field Notes</div>
+      <textarea id="field-notes" placeholder="Log coordinates, anomalies, soil/rock observations..."></textarea>
+    </div>
+  </aside>
+
+  <!-- Bottom Aligned HUD -->
+  <div id="bottom-hud">
+    <div class="hud-pill" id="hud-coords">Lat: — | Lon: —</div>
+    <div class="hud-pill" id="hud-query">Click map for Elev / Slope / Density</div>
+    <div class="hud-pill" id="hud-measure" style="display:none;">Dist: 0 m</div>
+    <div class="hud-pill legend-pill" id="hud-legend" style="display:none;">
+      <span id="legend-label"></span>
+      <span id="legend-min"></span>
+      <div id="legend-bar"></div>
+      <span id="legend-max"></span>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
